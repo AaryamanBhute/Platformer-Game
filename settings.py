@@ -12,6 +12,7 @@ class Settings:
 		self.screen = "main"
 		self.highscore = 0
 		self.gameOver = False
+		self.vizardThreshold = 25
 	def setScreen(self, s):
 		self.screen = s
 	def setHighScore(self, n):

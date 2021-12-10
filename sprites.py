@@ -139,6 +139,7 @@ class Player(pygame.sprite.Sprite):#needs transformation
 		self.settings = settings
 		self.wrap = True
 		self.tick = 0
+		self.releaseGetsuga = 0
 
 		self.power = 0
 		self.kills = 0
@@ -166,28 +167,57 @@ class Player(pygame.sprite.Sprite):#needs transformation
 		self.dieFromLeft = []
 		self.dieFromRight = []
 
+		self.getsugaright = []
+		self.getsugaleft = []
+
 		self.standleftbase = []
 		self.standrightbase = []
 		self.walkrightbase = []
 		self.walkleftbase = []
 
+		self.standleftvizard = []
+		self.standrightvizard = []
+		self.walkrightvizard = []
+		self.walkleftvizard = []
+
 		self.swingleft1base = []
 		self.swingleft2base = []
 		self.swingleft3base = []
+
+		self.swingleft1vizard = []
+		self.swingleft2vizard = []
+		self.swingleft3vizard = []
 
 		self.swingright1base = []
 		self.swingright2base = []
 		self.swingright3base = []
 
+		self.swingright1vizard = []
+		self.swingright2vizard = []
+		self.swingright3vizard = []
+
 		self.swingupfromleftbase = []
 		self.swingupfromrightbase = []
+
+		self.swingupfromleftvizard = []
+		self.swingupfromrightvizard = []
 
 		self.dieFromLeftbase = []
 		self.dieFromRightbase = []
 
-		self.form = "base"
+		self.dieFromLeftvizard = []
+		self.dieFromRightvizard = []
+
+		self.getsugarightvizard = []
+		self.getsugaleftvizard = []
+
+		self.toVizard = []
+
+		self.form = 'base'
 
 		self.swinging = False
+
+		self.transforming = False
 
 		self.isDead = False
 
@@ -198,34 +228,71 @@ class Player(pygame.sprite.Sprite):#needs transformation
 
 		for file_name in os.listdir(self.path):
 			image = pygame.image.load(os.path.join(self.path, file_name))
-			if(file_name.find("standleftbase") >= 0):
+			if(file_name.find("standleft") >= 0):
 				self.standleftbase.append(image)
-			elif(file_name.find("standrightbase") >= 0):
+			elif(file_name.find("standright") >= 0):
 				self.standrightbase.append(image)
-			elif(file_name.find("walkleftbase") >= 0):
+			elif(file_name.find("walkleft") >= 0):
 				self.walkleftbase.append(image)
-			elif(file_name.find("walkrightbase") >= 0):
+			elif(file_name.find("walkright") >= 0):
 				self.walkrightbase.append(image)
-			elif(file_name.find("swingright1base") >= 0):
+			elif(file_name.find("swingright1") >= 0):
 				self.swingright1base.append(image)
-			elif(file_name.find("swingleft1base") >= 0):
+			elif(file_name.find("swingleft1") >= 0):
 				self.swingleft1base.append(image)
-			elif(file_name.find("swingright2base") >= 0):
+			elif(file_name.find("swingright2") >= 0):
 				self.swingright2base.append(image)
-			elif(file_name.find("swingleft2base") >= 0):
+			elif(file_name.find("swingleft2") >= 0):
 				self.swingleft2base.append(image)
-			elif(file_name.find("swingright3base") >= 0):
+			elif(file_name.find("swingright3") >= 0):
 				self.swingright3base.append(image)
-			elif(file_name.find("swingleft3base") >= 0):
+			elif(file_name.find("swingleft3") >= 0):
 				self.swingleft3base.append(image)
-			elif(file_name.find("deathfromleftbase") >= 0):
+			elif(file_name.find("deathfromleft") >= 0):
 				self.dieFromLeftbase.append(image)
-			elif(file_name.find("deathfromrightbase") >= 0):
+			elif(file_name.find("deathfromright") >= 0):
 				self.dieFromRightbase.append(image)
-			elif(file_name.find("swingupfromrightbase") >= 0):
+			elif(file_name.find("swingupfromright") >= 0):
 				self.swingupfromrightbase.append(image)
-			elif(file_name.find("swingupfromleftbase") >= 0):
+			elif(file_name.find("swingupfromleft") >= 0):
 				self.swingupfromleftbase.append(image)
+
+		self.path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mediafiles', 'character', 'vizard')
+
+		for file_name in os.listdir(self.path):
+			image = pygame.image.load(os.path.join(self.path, file_name))
+			if(file_name.find("standleft") >= 0):
+				self.standleftvizard.append(image)
+			elif(file_name.find("standright") >= 0):
+				self.standrightvizard.append(image)
+			elif(file_name.find("walkleft") >= 0):
+				self.walkleftvizard.append(image)
+			elif(file_name.find("walkright") >= 0):
+				self.walkrightvizard.append(image)
+			elif(file_name.find("swingright1") >= 0):
+				self.swingright1vizard.append(image)
+			elif(file_name.find("swingleft1") >= 0):
+				self.swingleft1vizard.append(image)
+			elif(file_name.find("swingright2") >= 0):
+				self.swingright2vizard.append(image)
+			elif(file_name.find("swingleft2") >= 0):
+				self.swingleft2vizard.append(image)
+			elif(file_name.find("swingright3") >= 0):
+				self.swingright3vizard.append(image)
+			elif(file_name.find("swingleft3") >= 0):
+				self.swingleft3vizard.append(image)
+			elif(file_name.find("deathfromleft") >= 0):
+				self.dieFromLeftvizard.append(image)
+			elif(file_name.find("deathfromright") >= 0):
+				self.dieFromRightvizard.append(image)
+			elif(file_name.find("swingupfromright") >= 0):
+				self.swingupfromrightvizard.append(image)
+			elif(file_name.find("swingupfromleft") >= 0):
+				self.swingupfromleftvizard.append(image)
+			elif(file_name.find("getsugaright") >= 0):
+				self.getsugarightvizard.append(image)
+			elif(file_name.find("getsugaleft") >= 0):
+				self.getsugaleftvizard.append(image)
 
 		self.standleft = self.standleftbase
 		self.standright = self.standrightbase
@@ -242,12 +309,12 @@ class Player(pygame.sprite.Sprite):#needs transformation
 		self.dieFromLeft = self.dieFromLeftbase
 		self.dieFromRight = self.dieFromRightbase
 
-		self.swingleft = self.swingleft1
-		self.swingright = self.swingright1
+		self.swingleft = self.swingleft3
+		self.swingright = self.swingright3
 
 		self.getsugaright = self.swingright2
 		self.getsugaleft = self.swingleft2
-		self.getsugaupfromright = self.swingright2
+		self.getsugaupfromright =  self.swingright2
 		self.getsugaupfromleft = self.swingleft2
 
 		self.image = self.standleft[0]
@@ -260,6 +327,41 @@ class Player(pygame.sprite.Sprite):#needs transformation
 		self.gravity = False
 
 		self.rect = pygame.Rect(self.x, self.y, self.image.get_width(), self.image.get_height())
+	def transformToVizard(self):
+		self.velocity = 0
+		self.form = 'vizard'
+		self.swinging = False
+		self.standleft = self.standleftvizard
+		self.standright = self.standrightvizard
+		self.walkleft = self.walkleftvizard
+		self.walkright = self.walkrightvizard
+		self.swingleft1 =self.swingleft1vizard
+		self.swingleft2 =self.swingleft2vizard
+		self.swingleft3 =self.swingleft3vizard
+		self.swingright1 = self.swingright1vizard
+		self.swingright2 = self.swingright2vizard
+		self.swingright3 = self.swingright3vizard
+		self.swingupfromleft = self.swingupfromleftvizard
+		self.swingupfromright = self.swingupfromrightvizard
+		self.dieFromLeft = self.dieFromLeftvizard
+		self.dieFromRight = self.dieFromRightvizard
+
+		self.swingleft = self.swingleft3
+		self.swingright = self.swingright3
+
+		self.getsugaright = self.getsugarightvizard
+		self.getsugaleft = self.getsugaleftvizard
+		self.getsugaupfromright =  self.getsugarightvizard
+		self.getsugaupfromleft = self.getsugaleftvizard
+
+		self.path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mediafiles', 'character', 'toVizard')
+		for file_name in os.listdir(self.path):
+			image = pygame.image.load(os.path.join(self.path, file_name))
+			if(file_name.find("toVizard") >= 0):
+				self.toVizard.append(image)
+		self.animationFrame = -1
+		self.transforming = True
+		self.currentAnimation = "toVizard"
 	def isSwinging(self):
 		return(self.swinging)
 	def get_rect(self):
@@ -277,6 +379,18 @@ class Player(pygame.sprite.Sprite):#needs transformation
 	def setAnimation(self, s):
 		self.currentAnimation = s
 	def continueAnimation(self):
+		if(self.transforming):
+			if(self.tick%15 != 0):
+				return
+			if(self.currentAnimation == "toVizard"):
+				self.animationFrame += 1
+				if(self.animationFrame >= len(self.toVizard)):
+					self.transforming = False
+					self.swinging = False
+					self.tick = 0
+					self.animationFrame -= 1
+			self.image = self.toVizard[self.animationFrame]
+			return
 		if(self.isDead):
 			return
 		if(self.currentAnimation == "deathFromRight"):
@@ -298,48 +412,56 @@ class Player(pygame.sprite.Sprite):#needs transformation
 			self.image = self.dieFromLeft[self.animationFrame]
 			return
 		if(self.swinging):
-			if(self.tick%3 != 0):
+			if(self.tick%4 != 0):
 				return
 			self.animationFrame += 1
 			if(self.currentAnimation == "swingingRight"):
 				if(self.animationFrame >= len(self.swingright)):
-					self.animationFrame = 0
+					self.animationFrame -= 1
 					self.swinging = False
 				self.image = self.swingright[self.animationFrame]
 			elif(self.currentAnimation == "swingingLeft"):
 				if(self.animationFrame >= len(self.swingleft)):
-					self.animationFrame = 0
+					self.animationFrame -= 1
 					self.swinging = False
 				self.image = self.swingleft[self.animationFrame]
 			elif(self.currentAnimation == "swingingUpFromLeft"):
 				if(self.animationFrame >= len(self.swingupfromleft)):
-					self.animationFrame = 0
+					self.animationFrame -= 1
 					self.swinging = False
 				self.image = self.swingupfromleft[self.animationFrame]
 			elif(self.currentAnimation == "swingingUpFromRight"):
 				if(self.animationFrame >= len(self.swingupfromright)):
-					self.animationFrame = 0
+					self.animationFrame -= 1
 					self.swinging = False
 				self.image = self.swingupfromright[self.animationFrame]
 			elif(self.currentAnimation == "getsugaRight"):
 				if(self.animationFrame >= len(self.getsugaright)):
-					self.animationFrame = 0
+					self.animationFrame -= 1
 					self.swinging = False
+				elif(self.animationFrame == len(self.getsugaright)-2):
+					self.releaseGetsuga = 1
 				self.image = self.getsugaright[self.animationFrame]
 			elif(self.currentAnimation == "getsugaLeft"):
 				if(self.animationFrame >= len(self.getsugaleft)):
-					self.animationFrame = 0
+					self.animationFrame -= 1
 					self.swinging = False
+				elif(self.animationFrame == len(self.getsugaleft)-2):
+					self.releaseGetsuga = 2
 				self.image = self.getsugaleft[self.animationFrame]
 			elif(self.currentAnimation == "getsugaUpFromLeft"):
 				if(self.animationFrame >= len(self.getsugaupfromleft)):
-					self.animationFrame = 0
+					self.animationFrame -= 1
 					self.swinging = False
+				elif(self.animationFrame == len(self.getsugaupfromleft)-2):
+					self.releaseGetsuga = 3
 				self.image = self.getsugaupfromleft[self.animationFrame]
 			elif(self.currentAnimation == "getsugaUpFromRight"):
 				if(self.animationFrame >= len(self.getsugaupfromright)):
-					self.animationFrame = 0
+					self.animationFrame -= 1
 					self.swinging = False
+				elif(self.animationFrame == len(self.getsugaupfromright)-2):
+					self.releaseGetsuga = 1
 				self.image = self.getsugaupfromright[self.animationFrame]
 			return
 
@@ -377,7 +499,8 @@ class Player(pygame.sprite.Sprite):#needs transformation
 	def update(self):
 		#update internal tick
 		self.tick += 1
-
+		if(self.tick < 120):
+			self.isDead = False
 		if(self.tick%10 == 0):
 			self.power += 1
 			self.power = min(self.power, 1000)
@@ -567,8 +690,11 @@ class Hollow(pygame.sprite.Sprite):#complete
 		self.rect = pygame.Rect(self.x-self.image.get_width()/2, self.y, self.image.get_width(), self.image.get_height())
 
 class Getsuga(pygame.sprite.Sprite):#needs transformation
-	def __init__(self, vX, vY, x, y, settings):
+	def __init__(self, vX, vY, x, y, settings, form):
 		super(Getsuga, self).__init__()
+
+		self.form = form
+
 		self.settings = settings
 		self.tick = 0
 
@@ -580,7 +706,7 @@ class Getsuga(pygame.sprite.Sprite):#needs transformation
 
 		self.animationFrame = 0
 
-		self.path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mediafiles', 'getsugas', 'base')
+		self.path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mediafiles', 'getsugas', self.form)
 
 		for file_name in os.listdir(self.path):
 			image = pygame.image.load(os.path.join(self.path, file_name))

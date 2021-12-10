@@ -211,6 +211,29 @@ class Platformer:
 	def rectHeight(self, r):
 		return(r.bottom-r.top)
 	def _check_events_main_screen(self):
+		#check if the player is on ground
+		#if not apply gravity
+
+		if(self.onGround(self.player)):
+			self.player.setGravity(False)
+			if(self.player.yVelocity < 0):
+				self.player.yVelocity = 0
+		else:
+			self.player.setGravity(True)
+
+		if(self.player.transforming):
+			return
+		#check if the enemies are on ground
+		#apply gravity to all non grounded enemies
+		for hollow in self.enemies:
+			if(hollow == None):
+				continue
+			if(self.onGround(hollow)):
+				hollow.setGravity(False)
+				if(hollow.yVelocity < 0):
+					hollow.yVelocity = 0
+			else:
+				hollow.setGravity(True)
 		for i in range(0, len(self.clouds)):
 			if(self.clouds[i].x > 800):
 				try:
@@ -224,6 +247,21 @@ class Platformer:
 				else:
 					self.clouds[i].x = 1000
 				self.cloudGroup.add(self.clouds[i])
+		if(self.player.releaseGetsuga == 1):
+			g = Getsuga(1, 0, self.player.x+60, self.player.y-50, self.settings, self.player.form)
+			self.getsugas.append(g)
+			self.getsugaGroup.add(g)
+			self.player.releaseGetsuga = 0
+		elif(self.player.releaseGetsuga == 2):
+			g = Getsuga(-1, 0, self.player.x, self.player.y-50, self.settings, self.player.form)
+			self.getsugas.append(g)
+			self.getsugaGroup.add(g)
+			self.player.releaseGetsuga = 0
+		elif(self.player.releaseGetsuga == 3):
+			g = Getsuga(0, 1, self.player.x, self.player.y-60, self.settings, self.player.form)
+			self.getsugas.append(g)
+			self.getsugaGroup.add(g)
+			self.player.releaseGetsuga = 0
 		#update power rect
 		self.powerRect = pygame.Rect(550, 10, self.player.power/1000 * 200, 25)
 		#check if getsugas are out of range, is so delete them
@@ -271,6 +309,7 @@ class Platformer:
 					elif(hollow.currentAnimation.lower().find("right") >= 0):
 						hollow.currentAnimation = "deathFacingRight"
 					self.player.power += 10
+					self.player.kills += 1
 				elif(self.player.x > hollow.x and self.player.currentAnimation == "swingingLeft"):
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
@@ -278,6 +317,7 @@ class Platformer:
 					elif(hollow.currentAnimation.lower().find("right") >= 0):
 						hollow.currentAnimation = "deathFacingRight"
 					self.player.power += 10
+					self.player.kills += 1
 				elif(self.player.y < hollow.get_rect().bottom and self.player.currentAnimation.lower().find("swingingup") >= 0):
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
@@ -285,6 +325,7 @@ class Platformer:
 					elif(hollow.currentAnimation.lower().find("right") >= 0):
 						hollow.currentAnimation = "deathFacingRight"
 					self.player.power += 10
+					self.player.kills += 1
 				else:
 					None#here the player would typically die
 			for getsuga in self.getsugas:
@@ -297,28 +338,13 @@ class Platformer:
 					elif(hollow.currentAnimation.lower().find("right") >= 0):
 						hollow.currentAnimation = "deathFacingRight"
 					self.player.power += 10
-		#check if the player is on ground
-		#if not apply gravity
-		if(self.onGround(self.player)):
-			self.player.setGravity(False)
-			if(self.player.yVelocity < 0):
-				self.player.yVelocity = 0
-		else:
-			self.player.setGravity(True)
+					self.player.kills += 1
+		
 
-		#check if the enemies are on ground
-		#apply gravity to all non grounded enemies
-		for hollow in self.enemies:
-			if(hollow == None):
-				continue
-			if(self.onGround(hollow)):
-				hollow.setGravity(False)
-				if(hollow.yVelocity < 0):
-					hollow.yVelocity = 0
-			else:
-				hollow.setGravity(True)
+		#check all events
+		if(self.player.kills >= self.settings.vizardThreshold and self.player.form == 'base'):
+			self.player.transformToVizard()
 
-		#checck all events
 		for event in pygame.event.get():
 			#check if mouse is on the start button, if it is and clicked start the game
 			#otherwise if only hovered over the start button, make it green
@@ -364,8 +390,9 @@ class Platformer:
 		self.keys = pygame.key.get_pressed()
 
 		#uncancellable animation
-		if(self.player.swinging):
+		if(self.player.swinging or self.player.transforming):
 			return
+
 
 		#possibly update animation
 		if (self.keys[pygame.K_UP] and self.keys[pygame.K_LSHIFT]):
@@ -404,17 +431,11 @@ class Platformer:
 			self.player.setAnimation("getsugaLeft")
 			self.player.animationFrame = -1
 			#create a getsuga in direction
-			g = Getsuga(-1, 0, self.player.x-10, self.player.y-50, self.settings)
-			self.getsugas.append(g)
-			self.getsugaGroup.add(g)
 		elif (self.keys[pygame.K_RIGHT] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
 			self.player.power -= 100
 			self.player.swinging = True
 			self.player.setAnimation("getsugaRight")
 			self.player.animationFrame = -1
-			g = Getsuga(1, 0, self.player.x+60, self.player.y-50, self.settings)
-			self.getsugas.append(g)
-			self.getsugaGroup.add(g)
 		elif (self.keys[pygame.K_UP] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
 			self.player.power -= 100
 			self.player.swinging = True
@@ -423,9 +444,6 @@ class Platformer:
 			elif(self.player.currentAnimation.lower().find("right") >= 0):
 				self.player.setAnimation("getsugaUpFromRight")
 			self.player.animationFrame = -1
-			g = Getsuga(0, 1, self.player.x+30, self.player.y-60, self.settings)
-			self.getsugas.append(g)
-			self.getsugaGroup.add(g)
 		elif self.keys[pygame.K_RIGHT]:
 			self.player.velocity = 1
 			if(self.player.currentAnimation != "walkRight"):
@@ -468,6 +486,8 @@ class Platformer:
 					hollow.yVelocity = 0
 			else:
 				hollow.setGravity(True)
+
+
 		for i in range(0, len(self.clouds)):
 			if(self.clouds[i].x > 800):
 				try:
@@ -481,6 +501,10 @@ class Platformer:
 				else:
 					self.clouds[i].x = 1000
 				self.cloudGroup.add(self.clouds[i])
+
+		if(self.player.transforming):
+			return
+
 		#if the player is dead, update highscore and go back to menu
 		if(self.settings.gameOver):
 			if(self.tick%20 != 0):
@@ -502,6 +526,23 @@ class Platformer:
 		if(self.player.currentAnimation.lower().find("death") >= 0):
 			return
 		self.level = self.player.kills//50
+
+		if(self.player.releaseGetsuga == 1):
+			g = Getsuga(1, 0, self.player.x+60, self.player.y-50, self.settings, self.player.form)
+			self.getsugas.append(g)
+			self.getsugaGroup.add(g)
+			self.player.releaseGetsuga = 0
+		elif(self.player.releaseGetsuga == 2):
+			g = Getsuga(-1, 0, self.player.x+60, self.player.y-50, self.settings, self.player.form)
+			self.getsugas.append(g)
+			self.getsugaGroup.add(g)
+			self.player.releaseGetsuga = 0
+		elif(self.player.releaseGetsuga == 3):
+			g = Getsuga(0, 1, self.player.x+60, self.player.y-50, self.settings, self.player.form)
+			self.getsugas.append(g)
+			self.getsugaGroup.add(g)
+			self.player.releaseGetsuga = 0
+
 		if(self.ground1.x <= -1*self.ground1.get_image().get_width()):
 			self.scrollspeed = 3 + self.level
 			self.groundGroup.remove(self.ground1)
@@ -583,7 +624,7 @@ class Platformer:
 						hollow.currentAnimation = "deathFacingRight"
 					self.player.power += 10
 					self.player.kills += 1
-				elif(self.player.x > hollow.x and self.player.currentAnimation == "swingingLeft"):
+				elif(self.player.get_rect().right > hollow.get_rect().right and self.player.currentAnimation == "swingingLeft"):
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
 						hollow.currentAnimation = "deathFacingLeft"
@@ -600,10 +641,9 @@ class Platformer:
 					self.player.power += 10
 				else:
 					#when checking for player death, use shrunken hitbox created below
-					playerHitBox = pygame.Rect(self.player.get_rect().x, self.player.get_rect().y, self.player.get_image().get_width()-50, self.player.get_image().get_height()-50)
+					playerHitBox = pygame.Rect(self.player.get_rect().x, self.player.get_rect().y, 20, 20)
 					
-					playerHitBox.left += 25
-					playerHitBox.bottom += 25
+					playerHitBox.center = self.player.get_rect().center
 
 					if(hollow.get_rect().colliderect(playerHitBox) == False):
 						continue
@@ -618,7 +658,7 @@ class Platformer:
 					return
 			for getsuga in self.getsugas:
 				if(getsuga == None):
-					continue
+					continueself.swingleft3vizard.append(image)
 				if(hollow.get_rect().colliderect(getsuga.get_rect())):
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
@@ -627,6 +667,10 @@ class Platformer:
 						hollow.currentAnimation = "deathFacingRight"
 					self.player.power += 10
 					self.player.kills += 1
+
+		if(self.player.kills == self.settings.vizardThreshold and self.player.form == 'base'):
+			self.player.transformToVizard()
+
 		#check all events
 		for event in pygame.event.get():
 
@@ -649,7 +693,7 @@ class Platformer:
 		self.keys = pygame.key.get_pressed()
 
 		#uncancellable animation
-		if(self.player.swinging):
+		if(self.player.swinging or self.player.transforming):
 			return
 
 		#possibly update animation
@@ -688,18 +732,11 @@ class Platformer:
 			self.player.swinging = True
 			self.player.setAnimation("getsugaLeft")
 			self.player.animationFrame = -1
-			#create a getsuga in direction
-			g = Getsuga(-1, 0, self.player.x-10, self.player.y-50, self.settings)
-			self.getsugas.append(g)
-			self.getsugaGroup.add(g)
 		elif (self.keys[pygame.K_RIGHT] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
 			self.player.power -= 100
 			self.player.swinging = True
 			self.player.setAnimation("getsugaRight")
 			self.player.animationFrame = -1
-			g = Getsuga(1, 0, self.player.x+60, self.player.y-50, self.settings)
-			self.getsugas.append(g)
-			self.getsugaGroup.add(g)
 		elif (self.keys[pygame.K_UP] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
 			self.player.power -= 100
 			self.player.swinging = True
@@ -708,9 +745,6 @@ class Platformer:
 			elif(self.player.currentAnimation.lower().find("right") >= 0):
 				self.player.setAnimation("getsugaUpFromRight")
 			self.player.animationFrame = -1
-			g = Getsuga(0, 1, self.player.x+30, self.player.y-10, self.settings)
-			self.getsugas.append(g)
-			self.getsugaGroup.add(g)
 		elif self.keys[pygame.K_RIGHT]:
 			self.player.velocity = 1
 			if(self.player.currentAnimation != "walkRight"):
