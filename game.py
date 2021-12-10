@@ -10,6 +10,8 @@ import random
 
 import pygame
 
+from pygame import gfxdraw
+
 from settings import Settings
 
 from sprites import menuLogo
@@ -193,7 +195,7 @@ class Platformer:
 					collidesAny = True
 			while(collidesAny):
 				collidesAny = False
-				p = Platform(random.randint(820, 1500), random.randint(100, 500), self.settings)
+				p = Platform(random.randint(820, 1500), random.randint(300, 500), self.settings)
 				for platform in self.platforms:
 					if(p.get_rect().colliderect(platform.get_rect())):
 						collidesAny = True
@@ -204,6 +206,10 @@ class Platformer:
 		for i in range(0, n):
 			self.enemies.append(Hollow(900, 1600, 0, 300, self.settings))
 			self.hollowGroup.add(self.enemies[len(self.enemies)-1])
+	def rectWidth(self, r):
+		return(r.right-r.left)
+	def rectHeight(self, r):
+		return(r.bottom-r.top)
 	def _check_events_main_screen(self):
 		for i in range(0, len(self.clouds)):
 			if(self.clouds[i].x > 800):
@@ -398,7 +404,7 @@ class Platformer:
 			self.player.setAnimation("getsugaLeft")
 			self.player.animationFrame = -1
 			#create a getsuga in direction
-			g = Getsuga(-1, 0, self.player.x-10, self.player.y, self.settings)
+			g = Getsuga(-1, 0, self.player.x-10, self.player.y-50, self.settings)
 			self.getsugas.append(g)
 			self.getsugaGroup.add(g)
 		elif (self.keys[pygame.K_RIGHT] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
@@ -406,7 +412,7 @@ class Platformer:
 			self.player.swinging = True
 			self.player.setAnimation("getsugaRight")
 			self.player.animationFrame = -1
-			g = Getsuga(1, 0, self.player.x+60, self.player.y, self.settings)
+			g = Getsuga(1, 0, self.player.x+60, self.player.y-50, self.settings)
 			self.getsugas.append(g)
 			self.getsugaGroup.add(g)
 		elif (self.keys[pygame.K_UP] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
@@ -417,7 +423,7 @@ class Platformer:
 			elif(self.player.currentAnimation.lower().find("right") >= 0):
 				self.player.setAnimation("getsugaUpFromRight")
 			self.player.animationFrame = -1
-			g = Getsuga(0, 1, self.player.x+30, self.player.y-10, self.settings)
+			g = Getsuga(0, 1, self.player.x+30, self.player.y-60, self.settings)
 			self.getsugas.append(g)
 			self.getsugaGroup.add(g)
 		elif self.keys[pygame.K_RIGHT]:
@@ -481,7 +487,7 @@ class Platformer:
 				return
 			if(self.gameEndCountDown == 0):
 				self.settings.setScreen("main")
-				self.settings.highscore = self.player.kills
+				self.settings.highscore = max(self.player.kills, self.settings.highscore)
 				self.prepareMenu()
 			else:
 				if(self.gameEndCountDown%2 == 0):
@@ -492,6 +498,7 @@ class Platformer:
 			return
 		if(self.player.isDead):
 			self.settings.gameOver = True
+			return
 		if(self.player.currentAnimation.lower().find("death") >= 0):
 			return
 		self.level = self.player.kills//50
@@ -507,7 +514,7 @@ class Platformer:
 			self.groundGroup.add(self.ground2)
 			self.collidables.append(self.ground1)
 			self.collidables.append(self.ground2)
-			self.generateEnemies(5 + self.level)
+			self.generateEnemies(3 + self.level)
 			self.generatePlatforms(random.randint(5, 10))
 		self.scroll(self.player, self.scrollspeed)
 		self.scroll(self.ground1, self.scrollspeed)
@@ -592,6 +599,15 @@ class Platformer:
 						hollow.currentAnimation = "deathFacingRight"
 					self.player.power += 10
 				else:
+					#when checking for player death, use shrunken hitbox created below
+					playerHitBox = pygame.Rect(self.player.get_rect().x, self.player.get_rect().y, self.player.get_image().get_width()-50, self.player.get_image().get_height()-50)
+					
+					playerHitBox.left += 25
+					playerHitBox.bottom += 25
+
+					if(hollow.get_rect().colliderect(playerHitBox) == False):
+						continue
+
 					self.player.velocity = 0
 					if(self.player.currentAnimation.lower().find("left") >= 0):
 						self.player.animationFrame = -1
@@ -673,7 +689,7 @@ class Platformer:
 			self.player.setAnimation("getsugaLeft")
 			self.player.animationFrame = -1
 			#create a getsuga in direction
-			g = Getsuga(-1, 0, self.player.x-10, self.player.y, self.settings)
+			g = Getsuga(-1, 0, self.player.x-10, self.player.y-50, self.settings)
 			self.getsugas.append(g)
 			self.getsugaGroup.add(g)
 		elif (self.keys[pygame.K_RIGHT] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
@@ -681,7 +697,7 @@ class Platformer:
 			self.player.swinging = True
 			self.player.setAnimation("getsugaRight")
 			self.player.animationFrame = -1
-			g = Getsuga(1, 0, self.player.x+60, self.player.y, self.settings)
+			g = Getsuga(1, 0, self.player.x+60, self.player.y-50, self.settings)
 			self.getsugas.append(g)
 			self.getsugaGroup.add(g)
 		elif (self.keys[pygame.K_UP] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):

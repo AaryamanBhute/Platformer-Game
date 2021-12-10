@@ -410,7 +410,7 @@ class Player(pygame.sprite.Sprite):#needs transformation
 		self.rect.bottom = bottom + changeY
 		self.y = self.rect.top
 
-class Hollow(pygame.sprite.Sprite):#needs better sprite model
+class Hollow(pygame.sprite.Sprite):#complete
 	def __init__(self ,x1, x2 , y1, y2, settings):
 
 		super(Hollow, self).__init__()
@@ -559,7 +559,7 @@ class Hollow(pygame.sprite.Sprite):#needs better sprite model
 
 		self.tick += 1
 
-		if(self.x < -20):
+		if(self.x < 0):
 			self.isDead = True
 		elif(self.x > self.maxX):
 			self.isDead = True
