@@ -32,6 +32,7 @@ class Platformer:
 		"""Initialize the game, and create resources."""
 		pygame.init()
 		pygame.font.init()
+
 		self.settings = Settings()
 		self.prepareMenu()
 	def prepareGame(self):
@@ -91,6 +92,9 @@ class Platformer:
 
 		self.scoreText = self.gameFont.render("Score:", False, self.settings.white)
 		self.scoreTextVal = self.gameFont.render(str(self.player.kills), False, self.settings.white)
+
+		self.healthText = self.gameFont.render("Health: ", False, self.settings.white)
+		self.healthTextVal = self.gameFont.render(str(self.player.health), False, self.settings.green)
 
 		self.gameOverText = self.gameFont.render("", False, self.settings.red)
 
@@ -158,6 +162,9 @@ class Platformer:
 		self.highscoreText = self.gameFont.render("Highscore: ", False, self.settings.white)
 		self.highscoreTextVal = self.gameFont.render(str(self.settings.highscore), False, self.settings.white)
 
+		self.healthText = self.gameFont.render("Health: ", False, self.settings.white)
+		self.healthTextVal = self.gameFont.render(str(self.player.health), False, self.settings.green)
+
 		self.powerText = self.gameFont.render("Power:", False, self.settings.white)
 
 		self.powerRect = pygame.Rect(550, 10, self.player.power/1000 * 200, 25)
@@ -207,8 +214,10 @@ class Platformer:
 			self.enemies.append(Hollow(900, 1600, 0, 300, self.settings))
 			self.hollowGroup.add(self.enemies[len(self.enemies)-1])
 	def rectWidth(self, r):
+
 		return(r.right-r.left)
 	def rectHeight(self, r):
+
 		return(r.bottom-r.top)
 	def _check_events_main_screen(self):
 		#check if the player is on ground
@@ -221,8 +230,6 @@ class Platformer:
 		else:
 			self.player.setGravity(True)
 
-		if(self.player.transforming):
-			return
 		#check if the enemies are on ground
 		#apply gravity to all non grounded enemies
 		for hollow in self.enemies:
@@ -234,6 +241,8 @@ class Platformer:
 					hollow.yVelocity = 0
 			else:
 				hollow.setGravity(True)
+		if(self.player.transforming):
+			return
 		for i in range(0, len(self.clouds)):
 			if(self.clouds[i].x > 800):
 				try:
@@ -248,17 +257,17 @@ class Platformer:
 					self.clouds[i].x = 1000
 				self.cloudGroup.add(self.clouds[i])
 		if(self.player.releaseGetsuga == 1):
-			g = Getsuga(1, 0, self.player.x+60, self.player.y-50, self.settings, self.player.form)
+			g = Getsuga(1, 0, self.player.x+60, self.player.get_rect().bottom-150, self.settings, self.player.form)
 			self.getsugas.append(g)
 			self.getsugaGroup.add(g)
 			self.player.releaseGetsuga = 0
 		elif(self.player.releaseGetsuga == 2):
-			g = Getsuga(-1, 0, self.player.x, self.player.y-50, self.settings, self.player.form)
+			g = Getsuga(-1, 0, self.player.x, self.player.get_rect().bottom-150, self.settings, self.player.form)
 			self.getsugas.append(g)
 			self.getsugaGroup.add(g)
 			self.player.releaseGetsuga = 0
 		elif(self.player.releaseGetsuga == 3):
-			g = Getsuga(0, 1, self.player.x, self.player.y-60, self.settings, self.player.form)
+			g = Getsuga(0, 1, self.player.x, self.player.get_rect().bottom-170, self.settings, self.player.form)
 			self.getsugas.append(g)
 			self.getsugaGroup.add(g)
 			self.player.releaseGetsuga = 0
@@ -344,7 +353,8 @@ class Platformer:
 		#check all events
 		if(self.player.kills >= self.settings.vizardThreshold and self.player.form == 'base'):
 			self.player.transformToVizard()
-
+		elif(self.player.kills >= self.settings.vastoLordeThreshold and self.player.form == 'vizard'):
+			self.player.transformToVastolorde()
 		for event in pygame.event.get():
 			#check if mouse is on the start button, if it is and clicked start the game
 			#otherwise if only hovered over the start button, make it green
@@ -465,6 +475,7 @@ class Platformer:
 				self.player.setAnimation("standRight")
 				self.player.animationFrame = -1
 	def _check_events_game_screen(self):
+
 		self.tick += 1
 		#check if the player is on ground
 		#if not apply gravity
@@ -528,17 +539,17 @@ class Platformer:
 		self.level = self.player.kills//50
 
 		if(self.player.releaseGetsuga == 1):
-			g = Getsuga(1, 0, self.player.x+60, self.player.y-50, self.settings, self.player.form)
+			g = Getsuga(1, 0, self.player.x, self.player.get_rect().bottom-150, self.settings, self.player.form)
 			self.getsugas.append(g)
 			self.getsugaGroup.add(g)
 			self.player.releaseGetsuga = 0
 		elif(self.player.releaseGetsuga == 2):
-			g = Getsuga(-1, 0, self.player.x+60, self.player.y-50, self.settings, self.player.form)
+			g = Getsuga(-1, 0, self.player.x, self.player.get_rect().bottom-150, self.settings, self.player.form)
 			self.getsugas.append(g)
 			self.getsugaGroup.add(g)
 			self.player.releaseGetsuga = 0
 		elif(self.player.releaseGetsuga == 3):
-			g = Getsuga(0, 1, self.player.x+60, self.player.y-50, self.settings, self.player.form)
+			g = Getsuga(0, 1, self.player.x, self.player.get_rect().bottom-170, self.settings, self.player.form)
 			self.getsugas.append(g)
 			self.getsugaGroup.add(g)
 			self.player.releaseGetsuga = 0
@@ -616,7 +627,7 @@ class Platformer:
 			if(hollow.currentAnimation.lower().find("death") >= 0):
 				continue
 			if(self.player.get_rect().colliderect(hollow.get_rect())):
-				if(self.player.x < hollow.x and self.player.currentAnimation == "swingingRight"):
+				if(self.player.x < hollow.x and (self.player.currentAnimation == "swingingRight" or self.player.currentAnimation == "getsugaRight")):
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
 						hollow.currentAnimation = "deathFacingLeft"
@@ -624,7 +635,7 @@ class Platformer:
 						hollow.currentAnimation = "deathFacingRight"
 					self.player.power += 10
 					self.player.kills += 1
-				elif(self.player.get_rect().right > hollow.get_rect().right and self.player.currentAnimation == "swingingLeft"):
+				elif(self.player.get_rect().right > hollow.get_rect().right and (self.player.currentAnimation == "swingingLeft" or self.player.currentAnimation == "getsugaLeft")):
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
 						hollow.currentAnimation = "deathFacingLeft"
@@ -632,14 +643,14 @@ class Platformer:
 						hollow.currentAnimation = "deathFacingRight"
 					self.player.power += 10
 					self.player.kills += 1
-				elif(self.player.y > hollow.y and self.player.currentAnimation.lower().find("swingingup") >= 0):
+				elif(self.player.y > hollow.y and (self.player.currentAnimation.lower().find("swingingup") >= 0 or self.player.currentAnimation.lower().find("getsugaup") >= 0)):
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
 						hollow.currentAnimation = "deathFacingLeft"
 					elif(hollow.currentAnimation.lower().find("right") >= 0):
 						hollow.currentAnimation = "deathFacingRight"
 					self.player.power += 10
-				else:
+				elif(self.player.tick >= 180):
 					#when checking for player death, use shrunken hitbox created below
 					playerHitBox = pygame.Rect(self.player.get_rect().x, self.player.get_rect().y, 20, 20)
 					
@@ -668,8 +679,10 @@ class Platformer:
 					self.player.power += 10
 					self.player.kills += 1
 
-		if(self.player.kills == self.settings.vizardThreshold and self.player.form == 'base'):
+		if(self.player.kills >= self.settings.vizardThreshold and self.player.form == 'base'):
 			self.player.transformToVizard()
+		elif(self.player.kills >= self.settings.vastoLordeThreshold and self.player.form == 'vizard'):
+			self.player.transformToVastolorde()
 
 		#check all events
 		for event in pygame.event.get():
@@ -781,6 +794,8 @@ class Platformer:
 		self.groundGroup.draw(self.screen)
 		self.screen.blit(self.highscoreText, (10, 10))
 		self.screen.blit(self.highscoreTextVal, (10 + self.highscoreText.get_width(), 10))
+		self.screen.blit(self.healthText, (10 , 50))
+		self.screen.blit(self.healthTextVal, (10 + self.healthText.get_width(), 50))
 		self.screen.blit(self.powerText, (550 - self.powerText.get_width() - 20, 10))
 
 		if(self.player.power < 100):
@@ -795,11 +810,15 @@ class Platformer:
 		self.hollowGroup.update()
 		self.hollowGroup.draw(self.screen)
 	def _display_game_screen(self):
+
 		self.scoreTextVal = self.gameFont.render(str(self.player.kills), False, self.settings.white)
+		self.healthTextVal = self.gameFont.render(str(self.player.health), False, self.settings.green)
+
 		self.cloudGroup.update()
 		self.cloudGroup.draw(self.screen)
 
-		
+		self.screen.blit(self.healthText, (10 , 50))
+		self.screen.blit(self.healthTextVal, ((10 + self.healthText.get_width(), 50)))
 
 		self.groundGroup.update()
 		self.groundGroup.draw(self.screen)
