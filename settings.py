@@ -5,6 +5,7 @@ class Settings:
 		self.screen_height = 600
 		self.bg_color = (105,105,105)
 		self.darkblue = (0, 0, 100)
+		self.black = (0, 0, 0)
 		self.blue = (0, 0, 255)
 		self.green = (0, 255, 0)
 		self.white = (255, 255, 255)
@@ -13,8 +14,8 @@ class Settings:
 		self.screen = "main"
 		self.highscore = 0
 		self.gameOver = False
-		self.vizardThreshold = 25
-		self.vastoLordeThreshold = 50
+		self.vizardThreshold = 50
+		self.vastoLordeThreshold = 100
 	def setScreen(self, s):
 		self.screen = s
 	def setHighScore(self, n):

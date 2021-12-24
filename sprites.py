@@ -5,7 +5,7 @@ import sys
 import random
 
 import os
-
+	
 from settings import Settings
 
 class menuLogo(pygame.sprite.Sprite):#complete
@@ -78,9 +78,28 @@ class quitButton(pygame.sprite.Sprite):#complete
 		self.image = self.images[1]
 	def offHover(self):
 		self.image = self.images[0]
-	def load_image(self, path):
-		image = pygame.image.load(path)
-		return image
+
+class instructionsButton(pygame.sprite.Sprite):
+	def __init__(self, settings):
+		super(instructionsButton, self).__init__()
+		self.y = 500
+		self.settings = settings
+		self.images = []
+		self.path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mediafiles', 'instructionsbutton')
+		for file_name in os.listdir(self.path):
+			image = pygame.image.load(os.path.join(self.path, file_name))
+			self.images.append(image)
+		self.index = 0
+		self.image = self.images[self.index]
+		self.rect = pygame.Rect(255, 450, self.image.get_width(), self.image.get_height())
+	def get_rect(self):
+		return(self.rect)
+	def update(self):
+		None
+	def onHover(self):
+		self.image = self.images[1]
+	def offHover(self):
+		self.image = self.images[0]
 
 class Cloud(pygame.sprite.Sprite):#complete
 	def __init__(self, settings):
@@ -510,6 +529,7 @@ class Player(pygame.sprite.Sprite):#needs transformation
 		if(self.isDead):
 			return
 		if(self.currentAnimation == "deathFromRight"):
+			self.velocity = 0
 			if(self.tick%6 != 0):
 				return
 			self.animationFrame += 1
@@ -523,6 +543,7 @@ class Player(pygame.sprite.Sprite):#needs transformation
 			self.image = self.dieFromRight[self.animationFrame]
 			return
 		elif(self.currentAnimation == "deathFromLeft"):
+			self.velocity = 0
 			if(self.tick%6 != 0):
 				return
 			self.animationFrame += 1
@@ -846,11 +867,11 @@ class Getsuga(pygame.sprite.Sprite):#needs transformation
 
 		for file_name in os.listdir(self.path):
 			image = pygame.image.load(os.path.join(self.path, file_name))
-			if(file_name.find("getsugaleft1") >= 0):
+			if(file_name.find("getsugaleft") >= 0):
 				self.moveleft1.append(image)
-			elif(file_name.find("getsugaright1") >= 0):
+			elif(file_name.find("getsugaright") >= 0):
 				self.moveright1.append(image)
-			elif(file_name.find("getsugaup1") >= 0):
+			elif(file_name.find("getsugaup") >= 0):
 				self.moveup1.append(image)
 
 		self.x = x
@@ -885,7 +906,7 @@ class Getsuga(pygame.sprite.Sprite):#needs transformation
 	def setAnimation(self, s):
 		self.currentAnimation = s
 	def continueAnimation(self):
-		if(self.tick%3 != 0):
+		if(self.tick%30 != 0):
 			return
 		self.animationFrame += 1
 		if(self.currentAnimation == "move"):
@@ -895,7 +916,6 @@ class Getsuga(pygame.sprite.Sprite):#needs transformation
 	def update(self):
 		#animation updates
 		self.continueAnimation()
-
 		self.x += self.velocityX*10
 		self.y += self.velocityY*-10
 

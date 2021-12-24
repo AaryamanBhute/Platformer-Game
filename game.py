@@ -14,9 +14,12 @@ from pygame import gfxdraw
 
 from settings import Settings
 
+from sounds import Sounds
+
 from sprites import menuLogo
 from sprites import startButton
 from sprites import quitButton
+from sprites import instructionsButton
 from sprites import Cloud
 from sprites import Ground
 from sprites import Player
@@ -32,10 +35,14 @@ class Platformer:
 		"""Initialize the game, and create resources."""
 		pygame.init()
 		pygame.font.init()
+		pygame.mixer.init()
 
 		self.settings = Settings()
+		self.sounds = Sounds()
 		self.prepareMenu()
+
 	def prepareGame(self):
+		pygame.mixer.Channel(0).play(self.sounds.baseaudio, loops=-1)
 		self.settings.gameOver = False
 		self.tick = 0
 
@@ -103,6 +110,7 @@ class Platformer:
 
 		self.powerRect = pygame.Rect(550, 10, self.player.power/1000 * 200, 25)
 	def prepareMenu(self):
+		pygame.mixer.Channel(0).play(self.sounds.menuaudio, loops=-1)
 		self.settings.gameOver = False
 
 		self.background = image = pygame.image.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mediafiles', 'background', 'background.png'))
@@ -148,6 +156,12 @@ class Platformer:
 
 		self.collidables.append(self.quitButton)
 
+		self.instructionsButton = instructionsButton(self.settings)
+		self.instructionsButtonGroup = pygame.sprite.Group()
+		self.instructionsButtonGroup.add(self.instructionsButton)
+
+		self.collidables.append(self.instructionsButton)
+
 		self.clouds = [Cloud(self.settings), Cloud(self.settings), Cloud(self.settings), Cloud(self.settings), Cloud(self.settings), Cloud(self.settings), Cloud(self.settings), Cloud(self.settings), Cloud(self.settings)]
 		self.cloudGroup = pygame.sprite.Group()
 		for cloud in self.clouds:
@@ -168,10 +182,14 @@ class Platformer:
 		self.powerText = self.gameFont.render("Power:", False, self.settings.white)
 
 		self.powerRect = pygame.Rect(550, 10, self.player.power/1000 * 200, 25)
+	def prepareInstructions(self):
+		self.fpsClock = pygame.time.Clock()
+		self.settings.setScreen("instructions")
+		self.screen = pygame.display.set_mode((self.settings.screen_width, self.settings.screen_height))
+		self.instructionsImage = pygame.image.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mediafiles', 'instructions.png'))
 	def run_game(self):
 		"""Start the main loop for the game."""
 		while True:
-			#runs game 30 times per second
 			self.fpsClock.tick(self.settings.fps)
 			self._check_events()
 			self._update_screen()
@@ -180,6 +198,8 @@ class Platformer:
 			self._check_events_main_screen()
 		elif(self.settings.screen == "game"):
 			self._check_events_game_screen()
+		elif(self.settings.screen == "instructions"):
+			self._check_events_prepare_screen()
 	def onGround(self, o):
 		for element in self.collidables:
 			if(o.get_rect().colliderect(element.get_rect()) and (o.get_rect().bottom <= element.get_rect().top+25)):
@@ -312,6 +332,7 @@ class Platformer:
 				continue
 			if(self.player.get_rect().colliderect(hollow.get_rect())):
 				if(self.player.x < hollow.x and self.player.currentAnimation == "swingingRight"):
+					pygame.mixer.Channel(3).play(self.sounds.hollowDeath)
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
 						hollow.currentAnimation = "deathFacingLeft"
@@ -320,6 +341,7 @@ class Platformer:
 					self.player.power += 10
 					self.player.kills += 1
 				elif(self.player.x > hollow.x and self.player.currentAnimation == "swingingLeft"):
+					pygame.mixer.Channel(3).play(self.sounds.hollowDeath)
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
 						hollow.currentAnimation = "deathFacingLeft"
@@ -328,6 +350,7 @@ class Platformer:
 					self.player.power += 10
 					self.player.kills += 1
 				elif(self.player.y < hollow.get_rect().bottom and self.player.currentAnimation.lower().find("swingingup") >= 0):
+					pygame.mixer.Channel(3).play(self.sounds.hollowDeath)
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
 						hollow.currentAnimation = "deathFacingLeft"
@@ -341,6 +364,7 @@ class Platformer:
 				if(getsuga == None):
 					continue
 				if(hollow.get_rect().colliderect(getsuga.get_rect())):
+					pygame.mixer.Channel(3).play(self.sounds.hollowDeath)
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
 						hollow.currentAnimation = "deathFacingLeft"
@@ -352,9 +376,14 @@ class Platformer:
 
 		#check all events
 		if(self.player.kills >= self.settings.vizardThreshold and self.player.form == 'base'):
+			pygame.mixer.Channel(0).play(self.sounds.vizardaudio, loops=-1)
+			pygame.mixer.Channel(5).play(self.sounds.baseToVizard)
 			self.player.transformToVizard()
 		elif(self.player.kills >= self.settings.vastoLordeThreshold and self.player.form == 'vizard'):
+			pygame.mixer.Channel(0).play(self.sounds.vastolordeaudio, loops=-1)
+			pygame.mixer.Channel(5).play(self.sounds.vizardToVastolorde)
 			self.player.transformToVastolorde()
+
 		for event in pygame.event.get():
 			#check if mouse is on the start button, if it is and clicked start the game
 			#otherwise if only hovered over the start button, make it green
@@ -365,6 +394,13 @@ class Platformer:
 				self.startButton.onHover()
 			else:
 				self.startButton.offHover()
+
+			if(self.instructionsButton.get_rect().collidepoint(pygame.mouse.get_pos())):
+				if(pygame.mouse.get_pressed()[0]):
+					self.prepareInstructions()
+				self.instructionsButton.onHover()
+			else:
+				self.instructionsButton.offHover()
 
 			#check if mouse is on the quit button, if it is and clicked quit the game
 			#otherwise if only hovered over the quit button, make it red
@@ -412,39 +448,54 @@ class Platformer:
 			elif(self.player.currentAnimation.lower().find("right") >= 0):
 				self.player.setAnimation("swingingUpFromRight")
 			self.player.animationFrame = -1
+			pygame.mixer.Channel(1).play(self.sounds.swing1)
 		elif self.keys[pygame.K_RIGHT] and self.keys[pygame.K_LSHIFT]:
 			self.player.swinging = True
 			self.player.setAnimation("swingingRight")
 			#update swing animation to next one
 			if(self.player.swingright == self.player.swingright1):
 				self.player.swingright = self.player.swingright2
+				pygame.mixer.Channel(1).play(self.sounds.swing2)
 			elif(self.player.swingright == self.player.swingright2):
 				self.player.swingright = self.player.swingright3
+				pygame.mixer.Channel(1).play(self.sounds.swing3)
 			elif(self.player.swingright == self.player.swingright3):
 				self.player.swingright = self.player.swingright1
+				pygame.mixer.Channel(1).play(self.sounds.swing1)
 			self.player.animationFrame = -1
 
 		elif (self.keys[pygame.K_LEFT] and self.keys[pygame.K_LSHIFT]):
 			self.player.swinging = True
 			self.player.setAnimation("swingingLeft")
 			#update swing animation to next one
-			if(self.player.swingleft == self.player.swingleft1):
-				self.player.swingleft = self.player.swingleft2
-			elif(self.player.swingleft == self.player.swingleft2):
-				self.player.swingleft = self.player.swingleft3
-			elif(self.player.swingleft == self.player.swingleft3):
-				self.player.swingleft = self.player.swingleft1
+			if(self.player.swingright == self.player.swingright1):
+				self.player.swingright = self.player.swingright2
+				pygame.mixer.Channel(1).play(self.sounds.swing2)
+			elif(self.player.swingright == self.player.swingright2):
+				self.player.swingright = self.player.swingright3
+				pygame.mixer.Channel(1).play(self.sounds.swing3)
+			elif(self.player.swingright == self.player.swingright3):
+				self.player.swingright = self.player.swingright1
+				pygame.mixer.Channel(1).play(self.sounds.swing1)
 			self.player.animationFrame = -1
 		elif (self.keys[pygame.K_LEFT] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
 			self.player.power -= 100
 			self.player.swinging = True
 			self.player.setAnimation("getsugaLeft")
 			self.player.animationFrame = -1
+			if(self.player.form == 'base' or self.player.form == 'vizard'):
+				pygame.mixer.Channel(1).play(self.sounds.getsuga)
+			else:
+				pygame.mixer.Channel(1).play(self.sounds.cero)
 			#create a getsuga in direction
 		elif (self.keys[pygame.K_RIGHT] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
 			self.player.power -= 100
 			self.player.swinging = True
 			self.player.setAnimation("getsugaRight")
+			if(self.player.form == 'base' or self.player.form == 'vizard'):
+				pygame.mixer.Channel(1).play(self.sounds.getsuga)
+			else:
+				pygame.mixer.Channel(1).play(self.sounds.cero)
 			self.player.animationFrame = -1
 		elif (self.keys[pygame.K_UP] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
 			self.player.power -= 100
@@ -453,20 +504,29 @@ class Platformer:
 				self.player.setAnimation("getsugaUpFromLeft")
 			elif(self.player.currentAnimation.lower().find("right") >= 0):
 				self.player.setAnimation("getsugaUpFromRight")
+			if(self.player.form == 'base' or self.player.form == 'vizard'):
+				pygame.mixer.Channel(1).play(self.sounds.getsuga)
+			else:
+				pygame.mixer.Channel(1).play(self.sounds.cero)
 			self.player.animationFrame = -1
 		elif self.keys[pygame.K_RIGHT]:
 			self.player.velocity = 1
+			if(pygame.mixer.Channel(2).get_busy() == False):
+				pygame.mixer.Channel(2).play(self.sounds.walk)
 			if(self.player.currentAnimation != "walkRight"):
 				self.player.setAnimation("walkRight")
 				self.player.animationFrame = -1
 		elif self.keys[pygame.K_LEFT]:
 			self.player.velocity = -1
+			if(pygame.mixer.Channel(2).get_busy() == False):
+				pygame.mixer.Channel(2).play(self.sounds.walk)
 			if(self.player.currentAnimation != "walkLeft"):
 				self.player.setAnimation("walkLeft")
 				self.player.animationFrame = -1
 		elif self.keys[pygame.K_DOWN] and self.onGround(self.player) and self.player.get_rect().colliderect(self.ground.get_rect()) == False:
 			self.player.get_rect().bottom += 10
 		else:
+			pygame.mixer.Channel(2).stop()
 			self.player.velocity = 0
 			if(self.player.currentAnimation == "walkLeft" or self.player.currentAnimation == "swingingLeft" or self.player.currentAnimation == "swingingUpFromLeft"):
 				self.player.setAnimation("standLeft")
@@ -532,6 +592,12 @@ class Platformer:
 				self.gameEndCountDown -= 1
 			return
 		if(self.player.isDead):
+			if(self.player.form == 'base'):
+				pygame.mixer.Channel(4).play(self.sounds.baseDeath)
+			elif(self.player.form == 'vizard'):
+				pygame.mixer.Channel(4).play(self.sounds.vizardDeath)
+			elif(self.player.form == 'vastolorde'):
+				pygame.mixer.Channel(4).play(self.sounds.vastolordeDeath)
 			self.settings.gameOver = True
 			return
 		if(self.player.currentAnimation.lower().find("death") >= 0):
@@ -628,6 +694,7 @@ class Platformer:
 				continue
 			if(self.player.get_rect().colliderect(hollow.get_rect())):
 				if(self.player.x < hollow.x and (self.player.currentAnimation == "swingingRight" or self.player.currentAnimation == "getsugaRight")):
+					pygame.mixer.Channel(3).play(self.sounds.hollowDeath)
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
 						hollow.currentAnimation = "deathFacingLeft"
@@ -636,6 +703,7 @@ class Platformer:
 					self.player.power += 10
 					self.player.kills += 1
 				elif(self.player.get_rect().right > hollow.get_rect().right and (self.player.currentAnimation == "swingingLeft" or self.player.currentAnimation == "getsugaLeft")):
+					pygame.mixer.Channel(3).play(self.sounds.hollowDeath)
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
 						hollow.currentAnimation = "deathFacingLeft"
@@ -644,12 +712,14 @@ class Platformer:
 					self.player.power += 10
 					self.player.kills += 1
 				elif(self.player.y > hollow.y and (self.player.currentAnimation.lower().find("swingingup") >= 0 or self.player.currentAnimation.lower().find("getsugaup") >= 0)):
+					pygame.mixer.Channel(3).play(self.sounds.hollowDeath)
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
 						hollow.currentAnimation = "deathFacingLeft"
 					elif(hollow.currentAnimation.lower().find("right") >= 0):
 						hollow.currentAnimation = "deathFacingRight"
 					self.player.power += 10
+					self.player.kills += 1
 				elif(self.player.tick >= 180):
 					#when checking for player death, use shrunken hitbox created below
 					playerHitBox = pygame.Rect(self.player.get_rect().x, self.player.get_rect().y, 20, 20)
@@ -661,9 +731,11 @@ class Platformer:
 
 					self.player.velocity = 0
 					if(self.player.currentAnimation.lower().find("left") >= 0):
+						pygame.mixer.Channel(4).play(self.sounds.damageTaken)
 						self.player.animationFrame = -1
 						self.player.currentAnimation = "deathFromLeft"
 					elif(self.player.currentAnimation.lower().find("right") >= 0):
+						pygame.mixer.Channel(4).play(self.sounds.damageTaken)
 						self.player.animationFrame = -1
 						self.player.currentAnimation = "deathFromRight"
 					return
@@ -671,6 +743,7 @@ class Platformer:
 				if(getsuga == None):
 					continueself.swingleft3vizard.append(image)
 				if(hollow.get_rect().colliderect(getsuga.get_rect())):
+					pygame.mixer.Channel(3).play(self.sounds.hollowDeath)
 					hollow.animationFrame = -1
 					if(hollow.currentAnimation.lower().find("left") >= 0):
 						hollow.currentAnimation = "deathFacingLeft"
@@ -680,8 +753,12 @@ class Platformer:
 					self.player.kills += 1
 
 		if(self.player.kills >= self.settings.vizardThreshold and self.player.form == 'base'):
+			pygame.mixer.Channel(0).play(self.sounds.vizardaudio, loops=-1)
+			pygame.mixer.Channel(5).play(self.sounds.baseToVizard)
 			self.player.transformToVizard()
 		elif(self.player.kills >= self.settings.vastoLordeThreshold and self.player.form == 'vizard'):
+			pygame.mixer.Channel(0).play(self.sounds.vastolordeaudio, loops=-1)
+			pygame.mixer.Channel(5).play(self.sounds.vizardToVastolorde)
 			self.player.transformToVastolorde()
 
 		#check all events
@@ -712,6 +789,7 @@ class Platformer:
 		#possibly update animation
 		if (self.keys[pygame.K_UP] and self.keys[pygame.K_LSHIFT]):
 			self.player.swinging = True
+			pygame.mixer.Channel(1).play(self.sounds.swing1)
 			if(self.player.currentAnimation.lower().find("left") >= 0):
 				self.player.setAnimation("swingingUpFromLeft")
 			elif(self.player.currentAnimation.lower().find("right") >= 0):
@@ -723,10 +801,13 @@ class Platformer:
 			#update swing animation to next one
 			if(self.player.swingright == self.player.swingright1):
 				self.player.swingright = self.player.swingright2
+				pygame.mixer.Channel(1).play(self.sounds.swing2)
 			elif(self.player.swingright == self.player.swingright2):
 				self.player.swingright = self.player.swingright3
+				pygame.mixer.Channel(1).play(self.sounds.swing3)
 			elif(self.player.swingright == self.player.swingright3):
 				self.player.swingright = self.player.swingright1
+				pygame.mixer.Channel(1).play(self.sounds.swing1)
 			self.player.animationFrame = -1
 		
 		elif (self.keys[pygame.K_LEFT] and self.keys[pygame.K_LSHIFT]):
@@ -735,20 +816,31 @@ class Platformer:
 			#update swing animation to next one
 			if(self.player.swingleft == self.player.swingleft1):
 				self.player.swingleft = self.player.swingleft2
+				pygame.mixer.Channel(1).play(self.sounds.swing2)
 			elif(self.player.swingleft == self.player.swingleft2):
 				self.player.swingleft = self.player.swingleft3
+				pygame.mixer.Channel(1).play(self.sounds.swing3)
 			elif(self.player.swingleft == self.player.swingleft3):
+				pygame.mixer.Channel(1).play(self.sounds.swing1)
 				self.player.swingleft = self.player.swingleft1
 			self.player.animationFrame = -1
 		elif (self.keys[pygame.K_LEFT] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
 			self.player.power -= 100
 			self.player.swinging = True
 			self.player.setAnimation("getsugaLeft")
+			if(self.player.form == 'base' or self.player.form == 'vizard'):
+				pygame.mixer.Channel(1).play(self.sounds.getsuga)
+			else:
+				pygame.mixer.Channel(1).play(self.sounds.cero)
 			self.player.animationFrame = -1
 		elif (self.keys[pygame.K_RIGHT] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
 			self.player.power -= 100
 			self.player.swinging = True
 			self.player.setAnimation("getsugaRight")
+			if(self.player.form == 'base' or self.player.form == 'vizard'):
+				pygame.mixer.Channel(1).play(self.sounds.getsuga)
+			else:
+				pygame.mixer.Channel(1).play(self.sounds.cero)
 			self.player.animationFrame = -1
 		elif (self.keys[pygame.K_UP] and self.keys[pygame.K_LCTRL] and self.player.power >= 100):
 			self.player.power -= 100
@@ -757,20 +849,29 @@ class Platformer:
 				self.player.setAnimation("getsugaUpFromLeft")
 			elif(self.player.currentAnimation.lower().find("right") >= 0):
 				self.player.setAnimation("getsugaUpFromRight")
+			if(self.player.form == 'base' or self.player.form == 'vizard'):
+				pygame.mixer.Channel(1).play(self.sounds.getsuga)
+			else:
+				pygame.mixer.Channel(1).play(self.sounds.cero)
 			self.player.animationFrame = -1
 		elif self.keys[pygame.K_RIGHT]:
 			self.player.velocity = 1
+			if(pygame.mixer.Channel(2).get_busy() == False):
+				pygame.mixer.Channel(2).play(self.sounds.walk)
 			if(self.player.currentAnimation != "walkRight"):
 				self.player.setAnimation("walkRight")
 				self.player.animationFrame = -1
 		elif self.keys[pygame.K_LEFT]:
 			self.player.velocity = -1
+			if(pygame.mixer.Channel(2).get_busy() == False):
+				pygame.mixer.Channel(2).play(self.sounds.walk)
 			if(self.player.currentAnimation != "walkLeft"):
 				self.player.setAnimation("walkLeft")
 				self.player.animationFrame = -1
 		elif self.keys[pygame.K_DOWN] and self.onGround(self.player) and self.player.get_rect().colliderect(self.ground.get_rect()) == False:
 			self.player.get_rect().bottom += 10
 		else:
+			pygame.mixer.Channel(2).stop()
 			self.player.velocity = 0
 			if(self.player.currentAnimation == "walkLeft" or self.player.currentAnimation == "swingingLeft" or self.player.currentAnimation == "swingingUpFromLeft"):
 				self.player.setAnimation("standLeft")
@@ -778,13 +879,26 @@ class Platformer:
 			elif(self.player.currentAnimation == "walkRight" or self.player.currentAnimation == "swingingRight" or self.player.currentAnimation == "swingingUpFromRight"):
 				self.player.setAnimation("standRight")
 				self.player.animationFrame = -1
+	def _check_events_prepare_screen(self):
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				pygame.quit()
+				sys.exit()
+			#if a key is pressed
+			elif event.type == pygame.KEYDOWN:
+				#if escape is pressed, go to menu
+				if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+					self.settings.setScreen("main")
+					self.prepareMenu()
+	def _display_prepare_screen(self):
+
+		self.screen.blit(self.instructionsImage, (0, 0))
 	def _display_main_screen(self):
 		self.menuLogoGroup.update()
 		self.menuLogoGroup.draw(self.screen)
-		#self.startButtonGroup.update()
 		self.startButtonGroup.draw(self.screen)
-		#self.quitButtonGroup.update()
 		self.quitButtonGroup.draw(self.screen)
+		self.instructionsButtonGroup.draw(self.screen)
 		self.cloudGroup.update()
 		self.cloudGroup.draw(self.screen)
 		self.getsugaGroup.update()
@@ -852,11 +966,14 @@ class Platformer:
 	def _update_screen(self):
 		self.screen.fill(self.settings.bg_color)
 		if(self.settings.screen == "main"):
-			pygame.display.set_caption("PyPlatformer-Home")
+			pygame.display.set_caption("Home")
 			self._display_main_screen()
 		elif(self.settings.screen == "game"):
-			pygame.display.set_caption("PyPlatformer-Game")
+			pygame.display.set_caption("Game")
 			self._display_game_screen()
+		elif(self.settings.screen == "instructions"):
+			pygame.display.set_caption("Instructions")
+			self._display_prepare_screen()
 		pygame.display.flip()
 
 if __name__ == '__main__':
